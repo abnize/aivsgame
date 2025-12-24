@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/aivsgame/static/css/main.1d2004aa.css",
+    "main.js": "/aivsgame/static/js/main.c14fdcea.js",
+    "static/js/453.eb570f4f.chunk.js": "/aivsgame/static/js/453.eb570f4f.chunk.js",
+    "index.html": "/aivsgame/index.html",
+    "main.1d2004aa.css.map": "/aivsgame/static/css/main.1d2004aa.css.map",
+    "main.c14fdcea.js.map": "/aivsgame/static/js/main.c14fdcea.js.map",
+    "453.eb570f4f.chunk.js.map": "/aivsgame/static/js/453.eb570f4f.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.1d2004aa.css",
+    "static/js/main.c14fdcea.js"
+  ]
+}
