@@ -1,0 +1,136 @@
+/* 전체 화면 */
+body {
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
+  color: #fff;
+  background: linear-gradient(135deg, #5f2c82, #49a09d);
+  text-align: center;
+}
+
+/* HUD */
+#hud {
+  font-size: 18px;
+  margin-top: 10px;
+}
+
+/* 게임과 토끼 정렬 */
+#game-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 60px;
+  margin-top: 10px;
+}
+
+/* 게임 화면 */
+#game-container {
+  position: relative;
+  width: 200px;
+  height: 400px;
+  border: 2px solid #8c80ff;
+  background: #1b1a33;
+}
+
+/* ===== 퀴즈 Overlay ===== */
+#quizOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.65);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
+
+#quizOverlay.hidden {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+#quizBox {
+  background: #ffffffdd;
+  color: #222;
+  border-radius: 14px;
+  padding: 22px;
+  width: 240px;
+  text-align: center;
+}
+
+#quizBox button {
+  background: #7a5cff;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 14px;
+  margin: 6px;
+  color: #fff;
+  cursor: pointer;
+}
+
+#quizBox button:hover { background: #978aff; }
+
+/* 토끼 */
+#bunny-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ✅ 토끼 크기 제한 */
+#bunny-box img {
+  width: 180px;   /* 원하는 크기로 조절 가능 */
+  height: auto;
+  object-fit: contain;
+}
+
+#bunny-img {
+  width: 120px;
+}
+
+#bunny-bubble {
+  margin-top: 10px;
+  background: rgba(255,255,255,0.2);
+  padding: 10px 16px;
+  border-radius: 20px;
+  color: white;
+  font-size: 14px;
+}
+
+
+/* 하단 버튼 */
+#btn-box {
+  margin-top: 20px;
+}
+#btn-box button {
+  background: #8e82ff;
+  border: none;
+  padding: 10px 18px;
+  margin: 0 8px;
+  color: #fff;
+  border-radius: 10px;
+  cursor: pointer;
+}
+#btn-box button:hover {
+  background: #a89fff;
+}
+
+/*일시정지버튼*/
+.pause-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  background: #6f5cff;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+}
+.pause-btn.paused {
+  background: #444;
+}
