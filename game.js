@@ -20,9 +20,6 @@ let combo = 0;
 let penaltyStack = 0;
 const maxPenaltyBeforeGarbage = 3;
 
-// ⭐ 일시정지 플래그 기본값
-window.gamePaused = window.gamePaused || false;
-
 // ============================
 // ✅ React에서 호출할 초기화 함수
 // ============================
@@ -37,10 +34,23 @@ window.initTetris = function () {
   board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
 
   document.addEventListener("keydown", handleKeyDown);
-  document.addEventListener("keyup", handleKeyUp);  // ⭐ 소프트드랍 해제용
-
   update();
-};
+}
+
+// ✅ 벌칙 함수 유지
+// window.addPenalty = function () {
+//   penaltyStack++;
+//   if (penaltyStack >= maxPenaltyBeforeGarbage) {
+//     penaltyStack = 0;
+//     addGarbageLine();
+//   }
+// };
+
+// function addGarbageLine() {
+//   board.shift();
+//   board.push(Array(COLS).fill("#222222"));
+//   drawBoard();
+// }
 
 // 테트리스 벌칙용 “벽 줄” 색상
 const WALL_COLOR = "#222222";
@@ -98,12 +108,7 @@ function drawPiece() {
   player.shape.forEach((row, r) => {
     row.forEach((val, c) => {
       if (val) {
-        ctx.fillRect(
-          (player.x + c) * BLOCK,
-          (player.y + r) * BLOCK,
-          BLOCK - 1,
-          BLOCK - 1
-        );
+        ctx.fillRect((player.x + c) * BLOCK,(player.y + r) * BLOCK,BLOCK - 1,BLOCK - 1);
       }
     });
   });
@@ -160,22 +165,13 @@ function clearLines() {
 }
 
 // ============================
-// 🔁 게임 루프 + 소프트드랍 + 일시정지
+// 🔁 게임 루프
 // ============================
-
-// ⭐ 기본 낙하 속도 / 현재 속도
-let baseDropInterval = 800;
-let dropInterval = baseDropInterval;
+let dropInterval = 800;
 let dropCounter = 0;
 let lastTime = 0;
 
 function update(time = 0) {
-  // ⭐ 일시정지 시에는 상태만 유지하고 진행 멈춤
-  if (window.gamePaused) {
-    requestAnimationFrame(update);
-    return;
-  }
-
   const delta = time - lastTime;
   lastTime = time;
   dropCounter += delta;
@@ -195,13 +191,7 @@ function update(time = 0) {
   requestAnimationFrame(update);
 }
 
-// ============================
-// 🎮 키보드 입력
-// ============================
 function handleKeyDown(e) {
-  // ⭐ 일시정지 중이면 조작도 막기
-  if (window.gamePaused) return;
-
   switch (e.key) {
     case "ArrowLeft":
       if (!collision(-1, 0)) player.x--;
@@ -210,8 +200,7 @@ function handleKeyDown(e) {
       if (!collision(1, 0)) player.x++;
       break;
     case "ArrowDown":
-      // ⭐ 소프트드랍: 아래 방향키 누르고 있는 동안 빨라짐
-      dropInterval = 60;  // 빠른 속도로 낙하
+      if (!collision(0, 1)) player.y++;
       break;
     case "ArrowUp":
       const rotated = player.shape[0].map((_, i) =>
@@ -219,22 +208,5 @@ function handleKeyDown(e) {
       );
       if (!collision(0, 0, rotated)) player.shape = rotated;
       break;
-    case " ":
-      // ⭐ 스페이스바 = 하드드랍 (원하면)
-      while (!collision(0, 1)) {
-        player.y++;
-      }
-      mergePiece();
-      clearLines();
-      resetPiece();
-      dropCounter = 0;
-      break;
-  }
-}
-
-// ⭐ ArrowDown 뗐을 때 속도 원상복구
-function handleKeyUp(e) {
-  if (e.key === "ArrowDown") {
-    dropInterval = baseDropInterval;
   }
 }
