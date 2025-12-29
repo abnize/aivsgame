@@ -3,12 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <title>퀴즈 테트리스</title>
-  <link rel="stylesheet" href="./style.css" />
+
+  <!-- 테트리스 스타일 -->
+  <link rel="stylesheet" href="/aivsgame/tetris/style.css" />
 </head>
 <body>
+
+  <!-- ================= 테트리스 영역 ================= -->
   <div id="main-menu">
     <h1>퀴즈 테트리스</h1>
 
+    <!-- ⭐ game.js가 찾는 canvas -->
     <canvas id="gameCanvas" width="200" height="400"></canvas>
 
     <div class="button-box">
@@ -17,11 +22,76 @@
     </div>
   </div>
 
-  <!-- 게임 로직 -->
-  <script src="./game.js"></script>
-  <script src="./quiz.js"></script>
+  <!-- ================= 퀴즈 오버레이 ================= -->
+  <div
+    id="quizOverlay"
+    class="hidden"
+    style="
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    "
+  >
+    <div
+      style="
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        min-width: 300px;
+      "
+    >
+      <div
+        id="quizQuestion"
+        style="font-weight: bold; margin-bottom: 10px;"
+      ></div>
+      <div id="quizOptions"></div>
+    </div>
+  </div>
 
-  <!-- 초기화 & 버튼 이벤트 -->
+  <!-- ================= 토끼 ================= -->
+  <img
+    id="bunny-img"
+    src="/aivsgame/tetris/bunny_neutral.PNG"
+    style="
+      position: fixed;
+      right: 40px;
+      bottom: 120px;
+      width: 80px;
+      z-index: 5000;
+    "
+  />
+
+  <div
+    id="bunny-bubble"
+    style="
+      position: fixed;
+      right: 140px;
+      bottom: 160px;
+      background: white;
+      padding: 10px 14px;
+      border-radius: 15px;
+      font-size: 14px;
+      z-index: 5000;
+    "
+  >
+    …
+  </div>
+
+  <!-- ================= 공용 설정 ================= -->
+  <script>
+    // GitHub Pages 기준 루트
+    window.PUBLIC_URL = "/aivsgame";
+  </script>
+
+  <!-- ================= 게임 / 퀴즈 로직 ================= -->
+  <script src="/aivsgame/tetris/game.js"></script>
+  <script src="/aivsgame/tetris/quiz.js"></script>
+
+  <!-- ================= 초기화 ================= -->
   <script>
     // 테트리스 시작
     window.initTetris();
@@ -31,10 +101,11 @@
       window.gamePaused = !window.gamePaused;
     };
 
-    // 메인으로
+    // 메인으로 (React HashRouter)
     document.getElementById("home-btn").onclick = () => {
       window.parent.location.hash = "/";
     };
   </script>
+
 </body>
 </html>
