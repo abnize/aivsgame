@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>퀴즈 테트리스</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div id="main-menu">
+    <h1>퀴즈 테트리스</h1>
+
+    <div id="game-root"></div>
+
+    <div class="button-box">
+      <button id="pause-btn">⏸ 잠시정지</button>
+      <button id="home-btn">🏠 메인으로</button>
+    </div>
+  </div>
+
+  <script src="./game.js"></script>
+  <script src="./quiz.js"></script>
+
+  <script>
+    document.getElementById("home-btn").onclick = () => {
+      window.parent.location.hash = "/";
+    };
+  </script>
+</body>
+</html>
