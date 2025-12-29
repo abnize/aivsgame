@@ -52,10 +52,11 @@ function startQuizSystem() {
   // 🐰 토끼 이미지 & 말풍선
   // ===============================
   function img(file, text) {
-    const bunny = document.getElementById("bunny-img");
-    if (bunny) bunny.src = "/assets/bunny/" + file;
-    bunnyBubble.innerText = text;
-  }
+  const bunny = document.getElementById("bunny-img");
+  if (bunny) bunny.src = `/aivsgame/assets/bunny/${file}`;
+  bunnyBubble.innerText = text;
+}
+
 
   function pickRandom(arr) {
     let pick;
