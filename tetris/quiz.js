@@ -43,6 +43,7 @@ function startQuizSystem() {
   let quizTimer = null;
 
   let lastChatText = null;
+  let chatMemory = []; // 🔥 사담 누적 메모리
 
   window.score = window.score || 0;
   window.level = window.level || 1;
@@ -67,7 +68,7 @@ function startQuizSystem() {
   }
 
   // ===============================
-  // 🐰 토끼 혼잣말 (원본 유지)
+  // 🐰 사담 생성 (원본 유지)
   // ===============================
   function generateBunnyChat() {
     const foods = [
@@ -105,7 +106,8 @@ function startQuizSystem() {
         : { type: "mood", text: pickRandom(moodsNight) };
     }
 
-    // ⚠️ 배포에선 실패해도 무시 (기능 유지)
+    chatMemory.push(chatObj.text); // 🔥 사담 누적
+
     fetch("/api/save_chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -118,30 +120,29 @@ function startQuizSystem() {
   }
 
   // ===============================
-  // 🔧 퀴즈 데이터 (로컬 대체용, 구조 동일)
+  // 🔥 사담 기반 퀴즈 생성
   // ===============================
-  function getLocalQuizzes(level) {
-    return [
-      {
-        type: "quiz",
-        question: "테트리스에서 줄을 채우면 무슨 일이 일어날까?",
-        options: ["아무 일도 없다", "줄이 사라진다", "게임 오버", "점수가 초기화된다"],
-        answer: "줄이 사라진다",
-        level,
-      },
-      {
-        type: "quiz",
-        question: "토끼가 가장 좋아할 음식은?",
-        options: ["피자", "라면", "당근", "햄버거"],
-        answer: "당근",
-        level,
-      },
-      { type: "chat" },
-    ];
+  function generateMemoryQuiz() {
+    if (!chatMemory.length) return null;
+
+    const answer = chatMemory[Math.floor(Math.random() * chatMemory.length)];
+    const options = [answer];
+
+    while (options.length < 4) {
+      const fake = chatMemory[Math.floor(Math.random() * chatMemory.length)];
+      if (!options.includes(fake)) options.push(fake);
+    }
+
+    return {
+      type: "memoryQuiz",
+      question: "아까 토끼가 말했던 건 무엇일까?",
+      options: options.sort(() => Math.random() - 0.5),
+      answer,
+    };
   }
 
   // ===============================
-  // 서버 퀴즈 (실패 시 자동 대체)
+  // 퀴즈 로드 (로컬/배포 대응)
   // ===============================
   async function preloadQuizzes() {
     try {
@@ -149,9 +150,8 @@ function startQuizSystem() {
         `http://localhost:5000/api/get_quiz_batch?level=${window.level}&n=5`
       );
       quizCache = await res.json();
-    } catch (err) {
-      console.warn("⚠️ 서버 연결 실패 → 로컬 퀴즈 사용");
-      quizCache = getLocalQuizzes(window.level);
+    } catch {
+      quizCache = [];
     }
   }
 
@@ -179,12 +179,42 @@ function startQuizSystem() {
     setTimeout(() => overlay.classList.add("hidden"), 4000);
   }
 
+  // ===============================
+  // 🎯 레벨 규칙 반영된 트리거
+  // ===============================
   async function triggerQuiz() {
     if (inQuiz || isPaused) return;
     if (!quizCache.length) await preloadQuizzes();
-    const q = quizCache.pop();
-    if (!q) return;
-    q.type === "chat" ? showChat(generateBunnyChat()) : displayQuiz(q);
+
+    // 🔹 레벨 1: 퀴즈만
+    if (window.level === 1) {
+      const q = quizCache.find(q => q.type === "quiz");
+      if (q) displayQuiz(q);
+      return;
+    }
+
+    // 🔹 레벨 2~4: 퀴즈 + 사담
+    if (window.level >= 2 && window.level < 5) {
+      if (Math.random() < 0.4) {
+        showChat(generateBunnyChat());
+        return;
+      }
+      const q = quizCache.find(q => q.type === "quiz");
+      if (q) displayQuiz(q);
+      return;
+    }
+
+    // 🔹 레벨 5+: 사담 기반 퀴즈 포함
+    if (window.level >= 5 && chatMemory.length >= 2 && Math.random() < 0.4) {
+      const mq = generateMemoryQuiz();
+      if (mq) {
+        displayQuiz(mq);
+        return;
+      }
+    }
+
+    const q = quizCache.find(q => q.type === "quiz");
+    if (q) displayQuiz(q);
   }
 
   function startQuizLoop() {
