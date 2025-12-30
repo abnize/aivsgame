@@ -52,11 +52,10 @@ function startQuizSystem() {
   // 🐰 토끼 이미지 & 말풍선
   // ===============================
   function img(file, text) {
-  const bunny = document.getElementById("bunny-img");
-  if (bunny) bunny.src = `/aivsgame/assets/bunny/${file}`;
-  bunnyBubble.innerText = text;
-}
-
+    const bunny = document.getElementById("bunny-img");
+    if (bunny) bunny.src = `/aivsgame/assets/bunny/${file}`;
+    bunnyBubble.innerText = text;
+  }
 
   function pickRandom(arr) {
     let pick;
@@ -68,7 +67,7 @@ function startQuizSystem() {
   }
 
   // ===============================
-  // 🐰 토끼 혼잣말 (네 원본 데이터 유지)
+  // 🐰 토끼 혼잣말 (원본 유지)
   // ===============================
   function generateBunnyChat() {
     const foods = [
@@ -86,7 +85,6 @@ function startQuizSystem() {
     const hobbies = ["뜨개질","건담조립","요리","작곡","게임","코딩","런닝","운동","재봉","농사","농구","수영","독서","산책","낚시","노래"];
     const moodsMorning = ["오늘은 상쾌해!","기분 좋아!","힘이 나!","하늘이 예뻐~"];
     const moodsNight = ["조금 피곤하네","졸려 😪","눕고 싶어…","조용히 있고 싶어"];
-    const moodsNormal = ["행복해","기분 최고야!","그럭저럭 괜찮아~","지루하네"];
 
     const hour = new Date().getHours();
     let chatObj;
@@ -107,11 +105,12 @@ function startQuizSystem() {
         : { type: "mood", text: pickRandom(moodsNight) };
     }
 
+    // ⚠️ 배포에선 실패해도 무시 (기능 유지)
     fetch("/api/save_chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(chatObj),
-    });
+    }).catch(() => {});
 
     if (chatObj.type === "food") return `나는 ${chatObj.text} 먹고 싶어! 🐰`;
     if (chatObj.type === "hobby") return `요즘 ${chatObj.text}에 빠졌어 🐰`;
@@ -119,11 +118,41 @@ function startQuizSystem() {
   }
 
   // ===============================
-  // 서버 퀴즈
+  // 🔧 퀴즈 데이터 (로컬 대체용, 구조 동일)
+  // ===============================
+  function getLocalQuizzes(level) {
+    return [
+      {
+        type: "quiz",
+        question: "테트리스에서 줄을 채우면 무슨 일이 일어날까?",
+        options: ["아무 일도 없다", "줄이 사라진다", "게임 오버", "점수가 초기화된다"],
+        answer: "줄이 사라진다",
+        level,
+      },
+      {
+        type: "quiz",
+        question: "토끼가 가장 좋아할 음식은?",
+        options: ["피자", "라면", "당근", "햄버거"],
+        answer: "당근",
+        level,
+      },
+      { type: "chat" },
+    ];
+  }
+
+  // ===============================
+  // 서버 퀴즈 (실패 시 자동 대체)
   // ===============================
   async function preloadQuizzes() {
-    const res = await fetch(`http://localhost:5000/api/get_quiz_batch?level=${window.level}&n=5`);
-    quizCache = await res.json();
+    try {
+      const res = await fetch(
+        `http://localhost:5000/api/get_quiz_batch?level=${window.level}&n=5`
+      );
+      quizCache = await res.json();
+    } catch (err) {
+      console.warn("⚠️ 서버 연결 실패 → 로컬 퀴즈 사용");
+      quizCache = getLocalQuizzes(window.level);
+    }
   }
 
   function displayQuiz(q) {
@@ -166,7 +195,7 @@ function startQuizSystem() {
   }
 
   // ===============================
-  // 정답 / 오답 / 벌칙
+  // 정답 / 오답 / 벌칙 (원본 유지)
   // ===============================
   let wrongCombo = 0;
 
