@@ -1,8 +1,8 @@
 if (window.__TETRIS_LOADED__) {
   console.warn("⚠️ Tetris already loaded - skip");
-  return;
+} else {
+  window.__TETRIS_LOADED__ = true;
 }
-window.__TETRIS_LOADED__ = true;
 
 console.log("🎮 Tetris game loaded...");
 
