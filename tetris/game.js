@@ -1,5 +1,6 @@
 if (window.__TETRIS_LOADED__) {
   console.warn("⚠️ Tetris already loaded - skip");
+  return;
 }
 window.__TETRIS_LOADED__ = true;
 
@@ -24,54 +25,38 @@ const maxPenaltyBeforeGarbage = 3;
 // ✅ React에서 호출할 초기화 함수
 // ============================
 window.initTetris = function () {
-  canvas = document.getElementById("gameCanvas");
+  // 🔥 여기만 수정됨
+  canvas = document.getElementById("tetris");
+
   if (!canvas) {
-    console.error("❌ canvas not found");
+    console.error("❌ canvas not found (id=tetris)");
     return;
   }
+
+  console.log("✅ canvas found → Tetris start");
 
   ctx = canvas.getContext("2d");
   board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
 
   document.addEventListener("keydown", handleKeyDown);
   update();
-}
+};
 
-// ✅ 벌칙 함수 유지
-// window.addPenalty = function () {
-//   penaltyStack++;
-//   if (penaltyStack >= maxPenaltyBeforeGarbage) {
-//     penaltyStack = 0;
-//     addGarbageLine();
-//   }
-// };
-
-// function addGarbageLine() {
-//   board.shift();
-//   board.push(Array(COLS).fill("#222222"));
-//   drawBoard();
-// }
-
-// 테트리스 벌칙용 “벽 줄” 색상
+// ============================
+// 🚨 벌칙 시스템
+// ============================
 const WALL_COLOR = "#222222";
 
-// ✅ 오답 3번마다 바로 한 줄 추가
 window.addPenalty = function () {
   console.warn("벌칙 발동 → 맨 아래에 검은 벽 1줄 추가");
   addGarbageLine();
 };
 
-// ✅ 위 한 줄 제거 + 아래에 벽 줄 추가 (영구)
 function addGarbageLine() {
-  // 맨 위 줄 제거
   board.shift();
-
-  // 맨 아래에 “벽” 줄 추가
   board.push(Array(COLS).fill(WALL_COLOR));
-
   drawBoard();
 }
-
 
 // ============================
 // 🧱 블록 모양
@@ -108,7 +93,12 @@ function drawPiece() {
   player.shape.forEach((row, r) => {
     row.forEach((val, c) => {
       if (val) {
-        ctx.fillRect((player.x + c) * BLOCK,(player.y + r) * BLOCK,BLOCK - 1,BLOCK - 1);
+        ctx.fillRect(
+          (player.x + c) * BLOCK,
+          (player.y + r) * BLOCK,
+          BLOCK - 1,
+          BLOCK - 1
+        );
       }
     });
   });
@@ -153,9 +143,7 @@ function clearLines() {
   for (let r = ROWS - 1; r >= 0; r--) {
     const row = board[r];
     const isFull = row.every(v => v);
-    const isWall = row.every(v => v === WALL_COLOR); // 벌칙 줄인지 확인
-
-    // ✅ 꽉 찼지만 “벌칙 벽 줄”이면 지우지 않음
+    const isWall = row.every(v => v === WALL_COLOR);
     if (isFull && !isWall) {
       board.splice(r, 1);
       board.unshift(Array(COLS).fill(0));
