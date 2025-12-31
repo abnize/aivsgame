@@ -3,7 +3,7 @@ import json
 import re
 import random
 from openai import OpenAI
-from aivsgame.client.memory_manager import load_memory, random_memory_snippet
+from memory_manager import load_memory, random_memory_snippet
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
