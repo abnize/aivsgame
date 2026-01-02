@@ -113,11 +113,12 @@ function startQuizSystem() {
 
     chatMemory.push(chatObj.text); // 🔥 사담 누적
 
-    fetch("/api/save_chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(chatObj),
-    }).catch(() => {});
+    fetch(`${API_BASE}/api/save_chat`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(chatObj),
+}).catch(() => {});
+
 
     if (chatObj.type === "food") return `나는 ${chatObj.text} 먹고 싶어! 🐰`;
     if (chatObj.type === "hobby") return `요즘 ${chatObj.text}에 빠졌어 🐰`;
