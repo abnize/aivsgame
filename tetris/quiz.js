@@ -6,6 +6,11 @@ console.log("🐰 퀴즈 시스템 로딩됨");
 let retry = 0;
 let quizSystemStarted = false;
 
+const API_BASE =
+  window.location.hostname === "localhost"
+    ? "http://localhost:5000"
+    : "https://aivsgame-backend.onrender.com";
+
 const waitForOverlay = setInterval(() => {
   const overlay = document.getElementById("quizOverlay");
   if (overlay) {
@@ -144,22 +149,17 @@ function startQuizSystem() {
   // ===============================
   // 퀴즈 로드 (로컬/배포 대응)
   // ===============================
-  const API_BASE =
-  window.API_BASE ||
-  "https://aivsgame-backend.onrender.com";
-
-async function preloadQuizzes() {
-  try {
-    const res = await fetch(
-      `${API_BASE}/api/get_quiz_batch?level=${window.level}&n=5`
-    );
-    quizCache = await res.json();
-  } catch (e) {
-    console.error("❌ 퀴즈 로드 실패", e);
-    quizCache = [];
+  async function preloadQuizzes() {
+    try {
+      const res = await fetch(
+        `${API_BASE}/api/get_quiz_batch?level=${window.level}&n=5`
+      );
+      quizCache = await res.json();
+    } catch (e) {
+      console.error("❌ 퀴즈 로드 실패", e);
+      quizCache = [];
+    }
   }
-}
-
 
   function displayQuiz(q) {
     qText.textContent = q.question;
@@ -205,8 +205,12 @@ async function preloadQuizzes() {
         showChat(generateBunnyChat());
         return;
       }
-      const q = quizCache.find(q => q.type === "quiz");
-      if (q) displayQuiz(q);
+      const quizzes = quizCache.filter(q => q.type === "quiz");
+if (quizzes.length) {
+  const q = quizzes[Math.floor(Math.random() * quizzes.length)];
+  displayQuiz(q);
+}
+
       return;
     }
 
