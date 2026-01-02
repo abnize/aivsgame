@@ -144,10 +144,10 @@ def get_quiz_batch(level=1, n=5):
     # --------------------------------------------------------
     try:
         response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=1.0,
-        )
+    model="gpt-4.1-mini",   # 🔹 더 빠름
+    messages=[{"role": "user", "content": prompt}],
+    temperature=0.6,        # 🔹 안정 + 속도
+)
 
         raw = response.choices[0].message.content
         arr = _safe_json_array(raw)
