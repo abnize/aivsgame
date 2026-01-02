@@ -1,15 +1,15 @@
 {
   "files": {
     "main.css": "/aivsgame/static/css/main.1d2004aa.css",
-    "main.js": "/aivsgame/static/js/main.ea632cf8.js",
-    "static/js/453.eb570f4f.chunk.js": "/aivsgame/static/js/453.eb570f4f.chunk.js",
+    "main.js": "/aivsgame/static/js/main.0d1896c3.js",
+    "static/js/453.eca5f793.chunk.js": "/aivsgame/static/js/453.eca5f793.chunk.js",
     "index.html": "/aivsgame/index.html",
     "main.1d2004aa.css.map": "/aivsgame/static/css/main.1d2004aa.css.map",
-    "main.ea632cf8.js.map": "/aivsgame/static/js/main.ea632cf8.js.map",
-    "453.eb570f4f.chunk.js.map": "/aivsgame/static/js/453.eb570f4f.chunk.js.map"
+    "main.0d1896c3.js.map": "/aivsgame/static/js/main.0d1896c3.js.map",
+    "453.eca5f793.chunk.js.map": "/aivsgame/static/js/453.eca5f793.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.1d2004aa.css",
-    "static/js/main.ea632cf8.js"
+    "static/js/main.0d1896c3.js"
   ]
 }
