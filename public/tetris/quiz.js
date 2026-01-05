@@ -185,21 +185,29 @@ function startQuizSystem() {
   // 퀴즈 표시 (원본)
   // ===============================
   function displayQuiz(q) {
-    qText.textContent = q.question;
-    qOptions.innerHTML = "";
-
-    q.options.forEach(opt => {
-      const btn = document.createElement("button");
-      btn.textContent = opt;
-      btn.onclick = () => checkAnswer(opt, q.answer);
-      qOptions.appendChild(btn);
-    });
-
-    lastQuizAt = Date.now();  
-    overlay.classList.remove("hidden");
-    overlay.style.display = "flex";
-    inQuiz = true;
+  // ✅ 최종 방어선 (이거 없으면 언젠가 또 터짐)
+  if (!q || !Array.isArray(q.options)) {
+    console.warn("🚫 displayQuiz 최종 차단", q);
+    inQuiz = false;
+    return;
   }
+
+  qText.textContent = q.question;
+  qOptions.innerHTML = "";
+
+  q.options.forEach(opt => {
+    const btn = document.createElement("button");
+    btn.textContent = opt;
+    btn.onclick = () => checkAnswer(opt, q.answer);
+    qOptions.appendChild(btn);
+  });
+
+  lastQuizAt = Date.now();
+  overlay.classList.remove("hidden");
+  overlay.style.display = "flex";
+  inQuiz = true;
+}
+
 
   function showChat(text) {
     qText.textContent = text;
@@ -228,7 +236,7 @@ function startQuizSystem() {
       return;
     }
   }
-  
+
     // 레벨 1: 퀴즈만
     if (window.level === 1) {
       const q = quizCache.find(q => q.type === "quiz");
