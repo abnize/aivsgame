@@ -84,10 +84,13 @@ LOCAL_BANK = {
 # 🧩 JSON 안전 파서
 # ------------------------------------------------------------
 def _safe_json_array(text: str):
-    match = re.search(r"\[\s*{.*?}\s*\]", text, re.S)
-    if not match:
-        raise ValueError("JSON 배열을 찾지 못했습니다.")
-    return json.loads(match.group())
+    try:
+        return json.loads(text)
+    except Exception:
+        match = re.search(r"\[.*\]", text, re.S)
+        if not match:
+            raise ValueError("JSON 배열을 찾지 못했습니다.")
+        return json.loads(match.group())
 
 # ------------------------------------------------------------
 # ⭐ 메인 퀴즈 생성 함수
@@ -156,13 +159,16 @@ memory 규칙:
             if _is_duplicate(q.get("question", "")):
                 continue
 
-            if q.get("type") == "chat":
-                q["options"] = []
-                q["answer"] = None
-                q["memory"] = False
+        if q.get("type") == "chat":
+            q["options"] = []
+            q["answer"] = None
+            q["memory"] = False
 
-            items.append(q)
+# ✅ quiz인데 options가 없으면 빈 배열로 보정
+        if q.get("type") == "quiz" and "options" not in q:
+            q["options"] = []
 
+        items.append(q)
     except Exception as e:
         print("❌ GPT 오류:", e)
 
