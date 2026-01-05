@@ -3,6 +3,9 @@ console.log("🐰 퀴즈 시스템 로딩됨");
 // =================================================
 // quizOverlay가 React에서 생성될 때까지 대기
 // =================================================
+let lastQuizAt = Date.now(); // ✅ 추가
+const MAX_WAIT = 15000;     // ✅ 15초 제한
+
 let retry = 0;
 let quizSystemStarted = false;
 
@@ -192,6 +195,7 @@ function startQuizSystem() {
       qOptions.appendChild(btn);
     });
 
+    lastQuizAt = Date.now();  
     overlay.classList.remove("hidden");
     overlay.style.display = "flex";
     inQuiz = true;
@@ -210,8 +214,21 @@ function startQuizSystem() {
   // ===============================
   async function triggerQuiz() {
     if (inQuiz || isPaused) return;
+
+    const now = Date.now();
+  const forceQuiz = now - lastQuizAt > MAX_WAIT; // ✅ 추가
+
     if (!quizCache.length) await preloadQuizzes();
 
+    // ✅ 15초 넘으면 무조건 퀴즈
+  if (forceQuiz && quizCache.length) {
+    const q = quizCache.find(q => q.type === "quiz");
+    if (q) {
+      safeDisplayQuiz(q);
+      return;
+    }
+  }
+  
     // 레벨 1: 퀴즈만
     if (window.level === 1) {
       const q = quizCache.find(q => q.type === "quiz");
