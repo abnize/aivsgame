@@ -46,7 +46,7 @@ function startQuizSystem() {
 
   let quizCache = [];
   let inQuiz = false;
-  let quizInterval = 4000;
+  let quizInterval = 5000;
   let isPaused = false;
   let quizTimer = null;
 
@@ -270,6 +270,8 @@ function startQuizSystem() {
     const q = quizCache.find(q => q.type === "quiz");
     if (q) safeDisplayQuiz(q);
   }
+
+  setTimeout(() => triggerQuiz(), 500); // ✅ 첫 퀴즈 빠르게
 
   function startQuizLoop() {
     quizTimer = setTimeout(async () => {
