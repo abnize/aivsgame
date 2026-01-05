@@ -4,6 +4,25 @@ import re
 import random
 from openai import OpenAI
 from memory_manager import load_memory, random_memory_snippet
+from hashlib import sha1
+
+# ============================================================
+# 🔁 중복 질문 방지용 캐시
+# ============================================================
+_RECENT_Q = set()
+_MAX_RECENT = 50
+
+def _is_duplicate(q: str) -> bool:
+    """같은 질문 중복 방지"""
+    if not q:
+        return False
+    h = sha1(q.strip().encode("utf-8")).hexdigest()
+    if h in _RECENT_Q:
+        return True
+    _RECENT_Q.add(h)
+    if len(_RECENT_Q) > _MAX_RECENT:
+        _RECENT_Q.pop()
+    return False
 
 # ============================================================
 # OpenAI Client
@@ -65,9 +84,6 @@ LOCAL_BANK = {
 # 🧩 JSON 안전 파서
 # ------------------------------------------------------------
 def _safe_json_array(text: str):
-    """
-    GPT 응답에서 JSON 배열만 추출
-    """
     match = re.search(r"\[\s*{.*?}\s*\]", text, re.S)
     if not match:
         raise ValueError("JSON 배열을 찾지 못했습니다.")
@@ -77,7 +93,6 @@ def _safe_json_array(text: str):
 # ⭐ 메인 퀴즈 생성 함수
 # ------------------------------------------------------------
 def get_quiz_batch(level=1, n=5):
-    # ✅ level 타입 보정
     try:
         level = int(level)
     except Exception:
@@ -86,19 +101,10 @@ def get_quiz_batch(level=1, n=5):
     topic_desc = _topic(level)
     memory_list = load_memory()
 
-    # --------------------------------------------------------
-    # 🟣 레벨별 chat 최소 개수
-    # --------------------------------------------------------
-    if level <= 2:
-        chat_min = 3
-    elif level <= 4:
-        chat_min = 2
-    else:
-        chat_min = 1
+    # 🟣 chat 최소 개수
+    chat_min = 3 if level <= 2 else 2 if level <= 4 else 1
 
-    # --------------------------------------------------------
-    # 🟣 memory:true 조건
-    # --------------------------------------------------------
+    # 🟣 memory 조건
     must_memory = level >= 5 and len(memory_list) > 0
 
     # --------------------------------------------------------
@@ -112,29 +118,15 @@ def get_quiz_batch(level=1, n=5):
 현재 레벨: {level}
 현재 난이도 설명: {topic_desc}
 
-🎯 난이도 규칙:
-- 반드시 현재 레벨 범위 안에서만 출제
-
-🎯 출력 규칙:
+출력 규칙:
 - 총 {n}개 생성
-- 최소 {chat_min}개는 "type": "chat"
+- 최소 {chat_min}개는 chat
 
-🎯 memory 규칙:
-{"- memory:true 문제를 반드시 1개 포함" if must_memory else "- memory:true 문제를 절대 생성하지 마라"}
+memory 규칙:
+{"- memory:true 반드시 1개 포함" if must_memory else "- memory:true 생성 금지"}
 
-사담 데이터(JSON):
+사담 데이터:
 {json.dumps(memory_list, ensure_ascii=False)}
-
-형식:
-[
-  {{
-    "type": "chat" 또는 "quiz",
-    "question": "...",
-    "options": ["A","B","C"] 또는 [],
-    "answer": "정답" 또는 null,
-    "memory": true 또는 false
-  }}
-]
 """.strip()
 
     items = []
@@ -144,16 +136,24 @@ def get_quiz_batch(level=1, n=5):
     # --------------------------------------------------------
     try:
         response = client.chat.completions.create(
-    model="gpt-4.1-mini",   # 🔹 더 빠름
-    messages=[{"role": "user", "content": prompt}],
-    temperature=0.6,        # 🔹 안정 + 속도
-)
+            model="gpt-4.1-mini",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.6,
+        )
 
         raw = response.choices[0].message.content
         arr = _safe_json_array(raw)
 
         for q in arr:
             if not isinstance(q, dict):
+                continue
+
+            # ✅ 수정 ①: 레벨 1에서 chat 완전 차단
+            if level == 1 and q.get("type") == "chat":
+                continue
+
+            # ✅ 수정 ②: 중복 질문 제거
+            if _is_duplicate(q.get("question", "")):
                 continue
 
             if q.get("type") == "chat":
@@ -167,7 +167,7 @@ def get_quiz_batch(level=1, n=5):
         print("❌ GPT 오류:", e)
 
     # --------------------------------------------------------
-    # 🟤 레벨 3: 넌센스 강제
+    # 🟤 레벨 3: 넌센스 강제 (GPT 완전 무시)
     # --------------------------------------------------------
     if level == 3:
         items = []
@@ -182,12 +182,16 @@ def get_quiz_batch(level=1, n=5):
             })
 
     # --------------------------------------------------------
-    # 🔧 부족한 수 로컬 문제 보강
+    # 🔧 부족한 수 로컬 문제 보강 (중복 방지 포함)
     # --------------------------------------------------------
     while len(items) < n:
-        if level in LOCAL_BANK and LOCAL_BANK[level]:
-            items.append(random.choice(LOCAL_BANK[level]))
-        else:
-            items.append(random.choice(LOCAL_BANK[1]))
+        src = LOCAL_BANK.get(level) or LOCAL_BANK[1]
+        cand = random.choice(src)
+
+        # ✅ 수정 ③: 로컬 보강도 중복 체크
+        if _is_duplicate(cand.get("question", "")):
+            continue
+
+        items.append(cand)
 
     return items
