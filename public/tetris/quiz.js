@@ -240,7 +240,15 @@ function startQuizSystem() {
     // 레벨 1: 퀴즈만
     if (window.level === 1) {
       const q = quizCache.find(q => q.type === "quiz");
-      if (q) safeDisplayQuiz(q);
+
+// ✅ quiz가 하나도 없으면 캐시 비우고 다음 루프로 넘김
+if (!q) {
+  quizCache = [];
+  return;
+}
+
+safeDisplayQuiz(q);
+
       return;
     }
 
