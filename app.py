@@ -7,7 +7,10 @@ import os
 
 app = Flask(__name__)
 # 🔥 CORS 완전 허용 (GitHub Pages 접근용)
-CORS(app, resources={r"/*": {"origins": "*"}})
+CORS(
+    app,
+    resources={r"/api/*": {"origins": "*"}},
+    supports_credentials=True)
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -61,3 +64,10 @@ def test_gpt():
             "ok": False,
             "error": str(e)
         }, 500
+
+@app.after_request
+def after_request(response):
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
+    response.headers.add("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
+    return response
