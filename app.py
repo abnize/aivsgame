@@ -41,3 +41,21 @@ def api_save_chat():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+
+@app.route("/api/test_gpt")
+def test_gpt():
+    try:
+        resp = client.chat.completions.create(
+            model="gpt-4.1-mini",
+            messages=[{"role": "user", "content": "1+1은?"}],
+            temperature=0
+        )
+        return {
+            "ok": True,
+            "answer": resp.choices[0].message.content
+        }
+    except Exception as e:
+        return {
+            "ok": False,
+            "error": str(e)
+        }, 500
