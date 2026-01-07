@@ -1,13 +1,15 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from openai import OpenAI
 from api_openai import get_quiz_batch
 from memory_manager import save_memory
 import os
 
 app = Flask(__name__)
-
 # 🔥 CORS 완전 허용 (GitHub Pages 접근용)
 CORS(app, resources={r"/*": {"origins": "*"}})
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # ===============================
 # 서버 상태 확인용
