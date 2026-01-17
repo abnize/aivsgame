@@ -3,6 +3,9 @@ console.log("🐰 퀴즈 시스템 로딩됨");
 // =================================================
 // quizOverlay가 React에서 생성될 때까지 대기
 // =================================================
+let lastQuizAt = Date.now(); // ✅ 추가
+const MAX_WAIT = 15000;     // ✅ 15초 제한
+
 let retry = 0;
 let quizSystemStarted = false;
 
@@ -43,12 +46,12 @@ function startQuizSystem() {
 
   let quizCache = [];
   let inQuiz = false;
-  let quizInterval = 4000;
+  let quizInterval = 5000;
   let isPaused = false;
   let quizTimer = null;
 
   let lastChatText = null;
-  let chatMemory = []; // 🔥 사담 누적 메모리
+  let chatMemory = [];
 
   window.score = window.score || 0;
   window.level = window.level || 1;
@@ -111,14 +114,13 @@ function startQuizSystem() {
         : { type: "mood", text: pickRandom(moodsNight) };
     }
 
-    chatMemory.push(chatObj.text); // 🔥 사담 누적
+    chatMemory.push(chatObj.text);
 
     fetch(`${API_BASE}/api/save_chat`, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify(chatObj),
-}).catch(() => {});
-
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(chatObj),
+    }).catch(() => {});
 
     if (chatObj.type === "food") return `나는 ${chatObj.text} 먹고 싶어! 🐰`;
     if (chatObj.type === "hobby") return `요즘 ${chatObj.text}에 빠졌어 🐰`;
@@ -126,21 +128,22 @@ function startQuizSystem() {
   }
 
   // ===============================
-  // 🔥 사담 기반 퀴즈 생성
+  // 🔥 사담 기반 퀴즈 (보강)
   // ===============================
   function generateMemoryQuiz() {
-    if (!chatMemory.length) return null;
+    if (chatMemory.length < 2) return null;
 
     const answer = chatMemory[Math.floor(Math.random() * chatMemory.length)];
-    const options = [answer];
+    if (!answer) return null;
 
+    const options = Array.from(new Set([answer]));
     while (options.length < 4) {
-      const fake = chatMemory[Math.floor(Math.random() * chatMemory.length)];
-      if (!options.includes(fake)) options.push(fake);
+      const pick = chatMemory[Math.floor(Math.random() * chatMemory.length)];
+      if (pick) options.push(pick);
     }
 
     return {
-      type: "memoryQuiz",
+      type: "quiz",
       question: "아까 토끼가 말했던 건 무엇일까?",
       options: options.sort(() => Math.random() - 0.5),
       answer,
@@ -148,7 +151,7 @@ function startQuizSystem() {
   }
 
   // ===============================
-  // 퀴즈 로드 (로컬/배포 대응)
+  // 퀴즈 로드
   // ===============================
   async function preloadQuizzes() {
     try {
@@ -162,21 +165,49 @@ function startQuizSystem() {
     }
   }
 
-  function displayQuiz(q) {
-    qText.textContent = q.question;
-    qOptions.innerHTML = "";
-
-    q.options.forEach(opt => {
-      const btn = document.createElement("button");
-      btn.textContent = opt;
-      btn.onclick = () => checkAnswer(opt, q.answer);
-      qOptions.appendChild(btn);
-    });
-
-    overlay.classList.remove("hidden");
-    overlay.style.display = "flex";
-    inQuiz = true;
+  // ===============================
+  // 🛡️ 퀴즈 안전 표시 래퍼 (★ 추가)
+  // ===============================
+  function safeDisplayQuiz(q) {
+    if (
+      !q ||
+      typeof q.question !== "string" ||
+      !Array.isArray(q.options) ||
+      q.options.length === 0
+    ) {
+      console.warn("🚫 displayQuiz 차단 - 잘못된 퀴즈", q);
+      return;
+    }
+    displayQuiz(q);
   }
+
+  // ===============================
+  // 퀴즈 표시 (원본)
+  // ===============================
+  function displayQuiz(q) {
+  // ✅ 최종 방어선 (이거 없으면 언젠가 또 터짐)
+  if (!q || !Array.isArray(q.options)) {
+    console.warn("🚫 displayQuiz 최종 차단", q);
+    inQuiz = false;
+    return;
+  }
+
+  qText.textContent = q.question;
+  qOptions.innerHTML = "";
+
+  q.options.forEach(opt => {
+    const btn = document.createElement("button");
+    btn.textContent = opt;
+    btn.onclick = () => checkAnswer(opt, q.answer);
+    qOptions.appendChild(btn);
+  });
+
+  lastQuizAt = Date.now();
+  overlay.classList.remove("hidden");
+  overlay.style.display = "flex";
+  inQuiz = true;
+}
+
 
   function showChat(text) {
     qText.textContent = text;
@@ -187,46 +218,68 @@ function startQuizSystem() {
   }
 
   // ===============================
-  // 🎯 레벨 규칙 반영된 트리거
+  // 🎯 레벨 규칙 반영 트리거
   // ===============================
   async function triggerQuiz() {
     if (inQuiz || isPaused) return;
+
+    const now = Date.now();
+  const forceQuiz = now - lastQuizAt > MAX_WAIT; // ✅ 추가
+
     if (!quizCache.length) await preloadQuizzes();
 
-    // 🔹 레벨 1: 퀴즈만
+    // ✅ 15초 넘으면 무조건 퀴즈
+  if (forceQuiz && quizCache.length) {
+    const q = quizCache.find(q => q.type === "quiz");
+    if (q) {
+      safeDisplayQuiz(q);
+      return;
+    }
+  }
+
+    // 레벨 1: 퀴즈만
     if (window.level === 1) {
       const q = quizCache.find(q => q.type === "quiz");
-      if (q) displayQuiz(q);
+
+// ✅ quiz가 하나도 없으면 캐시 비우고 다음 루프로 넘김
+if (!q) {
+  quizCache = [];
+  return;
+}
+
+safeDisplayQuiz(q);
+
       return;
     }
 
-    // 🔹 레벨 2~4: 퀴즈 + 사담
+    // 레벨 2~4
     if (window.level >= 2 && window.level < 5) {
       if (Math.random() < 0.4) {
         showChat(generateBunnyChat());
         return;
       }
       const quizzes = quizCache.filter(q => q.type === "quiz");
-if (quizzes.length) {
-  const q = quizzes[Math.floor(Math.random() * quizzes.length)];
-  displayQuiz(q);
-}
-
+      if (quizzes.length) {
+        const q = quizzes[Math.floor(Math.random() * quizzes.length)];
+        safeDisplayQuiz(q);
+      }
       return;
     }
 
-    // 🔹 레벨 5+: 사담 기반 퀴즈 포함
+    // 레벨 5+: memoryQuiz
     if (window.level >= 5 && chatMemory.length >= 2 && Math.random() < 0.4) {
       const mq = generateMemoryQuiz();
       if (mq) {
-        displayQuiz(mq);
+        safeDisplayQuiz(mq);
         return;
       }
     }
 
     const q = quizCache.find(q => q.type === "quiz");
-    if (q) displayQuiz(q);
+    if (q) safeDisplayQuiz(q);
   }
+
+  setTimeout(() => triggerQuiz(), 500); // ✅ 첫 퀴즈 빠르게
 
   function startQuizLoop() {
     quizTimer = setTimeout(async () => {
